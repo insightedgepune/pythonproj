@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: login_db
+      MYSQL_USER: login_user
+      MYSQL_PASSWORD: user_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+      UPLOAD_LIMIT: 50M
+    ports:
+      - "8080:80"
+
+  # Python Application
+  app:
+    build: .
+    container_name: python-login-app
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: login_db
+      DB_USER: login_user
+      DB_PASSWORD: user_password
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./app.py:/app/app.py:ro
+      - ./templates:/app/templates:ro  # Mount templates directory
+
+volumes:
+  mysql_data:
+    driver: local
