@@ -3,10 +3,10 @@ pipeline {
     agent { label 'jenkins-agent-2' }
 
     environment {
-        DEPLOY_HOST = "192.168.1.18"
-        DEPLOY_USER = "vboxuser"
-        DEPLOY_PATH = "/home/vboxuser/pythonproj"
-        IMAGE_NAME = "python-login-app"
+        DEPLOY_HOST    = "192.168.1.18"
+        DEPLOY_USER    = "vboxuser"
+        DEPLOY_PATH    = "/home/vboxuser/pythonproj"
+        IMAGE_NAME     = "python-login-app"
         CONTAINER_NAME = "python-login-container"
     }
 
@@ -23,40 +23,49 @@ pipeline {
         stage('Deploy to Target') {
             steps {
 
-                sshagent(['target-server']) {
+                sshagent(credentials: ['target-server']) {
 
+                    // Create deployment directory
                     sh """
-                    ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
-                    mkdir -p ${DEPLOY_PATH}
-                    "
+                    ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \
+                    "mkdir -p ${DEPLOY_PATH}"
                     """
 
+                    // Copy project files
                     sh """
-                    rsync -av --delete --exclude='.git' ./ \
-                    ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/
+                    rsync -av --delete \
+                    --exclude='.git' \
+                    ./ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/
                     """
 
+                    // Build and run container
                     sh """
-                    ssh ${DEPLOY_USER}@${DEPLOY_HOST} "
+                    ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} '
+                        set -e
 
-                    cd ${DEPLOY_PATH}
+                        cd ${DEPLOY_PATH}
 
-                    docker stop ${CONTAINER_NAME} || true
+                        echo "Stopping old container..."
+                        docker stop ${CONTAINER_NAME} || true
 
-                    docker rm ${CONTAINER_NAME} || true
+                        echo "Removing old container..."
+                        docker rm ${CONTAINER_NAME} || true
 
-                    docker rmi ${IMAGE_NAME} || true
+                        echo "Removing old image..."
+                        docker rmi ${IMAGE_NAME} || true
 
-                    docker build -t ${IMAGE_NAME} .
+                        echo "Building Docker image..."
+                        docker build -t ${IMAGE_NAME} .
 
-                    docker run -d \
-                        --name ${CONTAINER_NAME} \
-                        -p 5000:5000 \
-                        ${IMAGE_NAME}
+                        echo "Starting new container..."
+                        docker run -d \
+                            --name ${CONTAINER_NAME} \
+                            -p 5000:5000 \
+                            ${IMAGE_NAME}
 
-                    docker ps
-
-                    "
+                        echo "Running containers:"
+                        docker ps
+                    '
                     """
                 }
             }
@@ -64,12 +73,17 @@ pipeline {
     }
 
     post {
+
         success {
-            echo 'Application deployed successfully.'
+            echo "Application deployed successfully."
         }
 
         failure {
-            echo 'Deployment failed.'
+            echo "Deployment failed."
+        }
+
+        always {
+            cleanWs()
         }
     }
 }
