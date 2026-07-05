@@ -5,7 +5,7 @@ pipeline {
     environment {
         DEPLOY_HOST = "192.168.1.18"
         DEPLOY_USER = "vboxuser"
-        DEPLOY_PATH = "/home/deploy/flask-login"
+        DEPLOY_PATH = "/home/vboxuser/flask-login"
     }
 
     stages {
