@@ -11,12 +11,12 @@ pipeline {
     stages {
 
         stage('Checkout') {
-            steps {
-                git branch: 'main',
-                    git credentialsId: 'python-newproj',
-                    url: 'https://github.com/insightedgepune/pythonproj.git'
-            }
-        }
+    steps {
+        git branch: 'main',
+            credentialsId: 'python-newproj',
+            url: 'https://github.com/insightedgepune/pythonproj.git'
+    }
+}
 
         stage('Build Docker Image') {
             steps {
