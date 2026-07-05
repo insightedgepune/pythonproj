@@ -1,6 +1,6 @@
 pipeline {
 
-    agent { label 'docker' }
+    agent { label 'jenkins-agent-2' }
 
     environment {
         DEPLOY_HOST = "192.168.1.18"
