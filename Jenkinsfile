@@ -13,7 +13,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                git credentialsId: 'python-newproj',
+                    git credentialsId: 'python-newproj',
                     url: 'https://github.com/insightedgepune/pythonproj.git'
             }
         }
